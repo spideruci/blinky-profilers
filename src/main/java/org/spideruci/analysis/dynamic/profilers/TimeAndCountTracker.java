@@ -1,12 +1,18 @@
 package org.spideruci.analysis.dynamic.profilers;
 
+import java.io.PrintStream;
+
 import org.spideruci.analysis.dynamic.api.EmptyProfiler;
 import org.spideruci.analysis.trace.EventType;
 import org.spideruci.analysis.trace.TraceEvent;
 
-import static org.spideruci.analysis.dynamic.Profiler.REAL_OUT;
+import org.spideruci.analysis.dynamic.Profiler;
 
 public class TimeAndCountTracker extends EmptyProfiler {
+
+  private PrintStream REAL_OUT() {
+    return Profiler.REAL_OUT;
+  }
 
 
   public static final int K = 22;
@@ -14,6 +20,8 @@ public class TimeAndCountTracker extends EmptyProfiler {
   public static final int insnStartType = EventType.$enter$.ordinal();
   
   public static long probeTime = 0;
+
+  private static long probeCounter = 0L;
   
   private static long counter = 0L;
   private static long[] timers = new long[K];
@@ -30,6 +38,7 @@ public class TimeAndCountTracker extends EmptyProfiler {
   }
   
   private void tick(final TraceEvent e) {
+    probeCounter += 1;
     EventType type = e.getExecInsnType();
     long time = System.currentTimeMillis() - probeTime;
     tick(type, time);
@@ -42,6 +51,11 @@ public class TimeAndCountTracker extends EmptyProfiler {
 
   @Override
   public void startProfiling() {
+    probeTime = 0L;
+    probeCounter = 0L;
+
+    counter = 0L;
+
     for (int i = 0; i < K; i += 1) {
       timers[i] = 0L;
       counters[i] = 0L;
@@ -50,11 +64,12 @@ public class TimeAndCountTracker extends EmptyProfiler {
 
   @Override
   public void endProfiling() {
-    REAL_OUT.println("Total Event Count:" + counter);
+    REAL_OUT().println("Total ticks:" + probeCounter);
+    REAL_OUT().println("Total Event Count:" + counter);
     for (int i = 0; i < K; i += 1) {
       EventType eventType = eventTypes[i + insnStartType];
       final String eventTypeName = eventType.toString();
-      REAL_OUT.println(eventTypeName + ":: Event Count:" + counters[i] + "; Event Time:" + timers[i]);
+      REAL_OUT().println((i + insnStartType) + " // " + eventTypeName + ":: Event Count:" + counters[i] + "; Event Time:" + timers[i]);
     }
   }
   
