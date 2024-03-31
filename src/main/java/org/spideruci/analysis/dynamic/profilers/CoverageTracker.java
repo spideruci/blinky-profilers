@@ -3,6 +3,8 @@ package org.spideruci.analysis.dynamic.profilers;
 import org.spideruci.analysis.dynamic.api.EmptyProfiler;
 import org.spideruci.analysis.dynamic.api.IProfiler;
 import org.spideruci.analysis.trace.EventType;
+import org.spideruci.analysis.trace.InsnExecEvent;
+import org.spideruci.analysis.trace.MethodDecl;
 import org.spideruci.analysis.trace.TraceEvent;
 import org.spideruci.analysis.trace.events.props.InsnPropNames;
 
@@ -24,7 +26,7 @@ public class CoverageTracker extends EmptyProfiler implements IProfiler {
   }
   
   @Override
-  public void startProfiling() {
+  public void startProfiling(String desc) {
     REAL_OUT.println("Starting coverage tracker");
   }
   
@@ -34,11 +36,7 @@ public class CoverageTracker extends EmptyProfiler implements IProfiler {
   }
   
   @Override
-  public void willInstrumentMethod(final TraceEvent e)  { 
-    if (e.getType() != EventType.$$method$$) {
-      return;
-    }
-
+  public void willInstrumentMethod(final MethodDecl e)  { 
     String methodName = e.getDeclName();
     String className = e.getDeclOwner();
     long id = e.getId();
@@ -69,12 +67,12 @@ public class CoverageTracker extends EmptyProfiler implements IProfiler {
   }
 
   @Override
-  public void profileInsn(final TraceEvent e) {
-    if (e.getExecInsnType() != EventType.$line$) {
+  public void profileInsn(final InsnExecEvent e) {
+    if (e.insnEventType != EventType.$line$.name()) {
       return;
     }
 
-    String sourceLineInsnId = e.getExecInsnEventId();
+    String sourceLineInsnId = e.insnEventId;
 
     if (lineProfileCounts.containsKey(sourceLineInsnId)) {
       int count = lineProfileCounts.get(sourceLineInsnId);
@@ -85,7 +83,7 @@ public class CoverageTracker extends EmptyProfiler implements IProfiler {
   }
   
   @Override
-  public void endProfiling() {
+  public void endProfiling(String desc) {
     REAL_OUT.println("ending coverage tracker");
 
     REAL_OUT.printf("Classes instrumented: %s\n", this.instrumentedClasses.size());

@@ -3,8 +3,12 @@ package org.spideruci.analysis.dynamic.profilers;
 import java.io.PrintStream;
 
 import org.spideruci.analysis.dynamic.api.EmptyProfiler;
+import org.spideruci.analysis.trace.EnterExecEvent;
 import org.spideruci.analysis.trace.EventType;
+import org.spideruci.analysis.trace.InsnExecEvent;
+import org.spideruci.analysis.trace.InvokeInsnExecEvent;
 import org.spideruci.analysis.trace.TraceEvent;
+import org.spideruci.analysis.trace.ITraceEvent;
 
 import org.spideruci.analysis.dynamic.Profiler;
 
@@ -37,9 +41,9 @@ public class TimeAndCountTracker extends EmptyProfiler {
     timers[idx] = timer + time;
   }
   
-  private void tick(final TraceEvent e) {
+  private void tick(final ITraceEvent e) {
     probeCounter += 1;
-    EventType type = e.getExecInsnType();
+    EventType type = e.getType();
     long time = System.currentTimeMillis() - probeTime;
     tick(type, time);
   }
@@ -50,7 +54,7 @@ public class TimeAndCountTracker extends EmptyProfiler {
   }
 
   @Override
-  public void startProfiling() {
+  public void startProfiling(String desc) {
     probeTime = 0L;
     probeCounter = 0L;
 
@@ -63,7 +67,7 @@ public class TimeAndCountTracker extends EmptyProfiler {
   }
 
   @Override
-  public void endProfiling() {
+  public void endProfiling(String desc) {
     REAL_OUT().println("Total ticks:" + probeCounter);
     REAL_OUT().println("Total Event Count:" + counter);
     for (int i = 0; i < K; i += 1) {
@@ -79,7 +83,7 @@ public class TimeAndCountTracker extends EmptyProfiler {
   }
 
   @Override
-  public void profileMethodEntry(final TraceEvent e) {
+  public void profileMethodEntry(final EnterExecEvent e) {
     tick(e);
   }
 
@@ -89,12 +93,12 @@ public class TimeAndCountTracker extends EmptyProfiler {
   }
 
   @Override
-  public void profileMethodInvoke(final TraceEvent e) {
+  public void profileMethodInvoke(final InvokeInsnExecEvent e) {
     tick(e);
   }
 
   @Override
-  public void profileInsn(final TraceEvent e) {
+  public void profileInsn(final InsnExecEvent e) {
     tick(e);
   }
 
@@ -114,7 +118,7 @@ public class TimeAndCountTracker extends EmptyProfiler {
   }
 
   @Override
-  public void profileMethodExit(final TraceEvent e) {
+  public void profileMethodExit(final InsnExecEvent e) {
     tick(e);
   }
 

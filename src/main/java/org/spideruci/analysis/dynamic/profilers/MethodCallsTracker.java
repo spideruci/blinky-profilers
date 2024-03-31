@@ -1,8 +1,9 @@
 package org.spideruci.analysis.dynamic.profilers;
 
-import org.spideruci.analysis.dynamic.Profiler;
 import org.spideruci.analysis.dynamic.api.EmptyProfiler;
 import org.spideruci.analysis.trace.EventType;
+import org.spideruci.analysis.trace.InvokeInsnExecEvent;
+import org.spideruci.analysis.trace.MethodDecl;
 import org.spideruci.analysis.trace.TraceEvent;
 
 import java.util.ArrayList;
@@ -24,7 +25,7 @@ public class MethodCallsTracker extends EmptyProfiler {
   }
 
   @Override
-  public void willInstrumentMethod(final TraceEvent e)  {
+  public void willInstrumentMethod(final MethodDecl e)  {
     if (e.getType() != EventType.$$method$$) {
       return;
     }
@@ -65,16 +66,8 @@ public class MethodCallsTracker extends EmptyProfiler {
   }
 
   @Override
-  public void profileMethodInvoke(final TraceEvent e) {
-    if (e.getType() != EventType.$$$) {
-      return;
-    }
-
-    if (e.getExecInsnType() != EventType.$invoke$) {
-      return;
-    }
-
-    String insnId = e.getExecInsnEventId();
+  public void profileMethodInvoke(final InvokeInsnExecEvent e) {
+    String insnId = e.insnEventId; 
     String invokeDesc = instructionIdToDesc.get(insnId);
 
     if (invokeDesc == null) {
@@ -90,7 +83,7 @@ public class MethodCallsTracker extends EmptyProfiler {
   }
 
   @Override
-  public void endProfiling() {
+  public void endProfiling(String desc) {
     for (String k : callToCaller.keySet()) {
       System.out.println(k + " ... " + callToCaller.get(k));
     }
