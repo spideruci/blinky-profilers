@@ -1,6 +1,7 @@
 package org.spideruci.analysis.dynamic.profilers;
 
 import org.spideruci.analysis.dynamic.api.EmptyProfiler;
+import org.spideruci.analysis.statik.instrumentation.Config;
 import org.spideruci.analysis.trace.EventType;
 import org.spideruci.analysis.trace.InvokeInsnExecEvent;
 import org.spideruci.analysis.trace.MethodDecl;
@@ -11,6 +12,10 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 public class MethodCallsTracker extends EmptyProfiler {
+
+  static {
+    Config.profiler = new MethodCallsTracker();
+  }
 
   LinkedHashMap<String, Integer> lineProfileCounts = new LinkedHashMap<>();;
   HashMap<String, ClassAndMethod> parentMap = new HashMap<>();
