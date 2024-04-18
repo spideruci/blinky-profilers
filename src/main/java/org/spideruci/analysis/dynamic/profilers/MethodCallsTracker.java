@@ -25,6 +25,16 @@ public class MethodCallsTracker extends EmptyProfiler {
   HashMap<String, Long> callToCaller = new HashMap<>();
 
   @Override
+  public String getLogConfig() {
+    return "exi";
+  }
+
+  @Override
+  public boolean canUseFrames() {
+    return true;
+  }
+
+  @Override
   public String description() {
     return "MethodCallsTracker";
   }
