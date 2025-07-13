@@ -75,7 +75,7 @@ public class MethodCallsTracker extends EmptyProfiler {
   }
 
   @Override
-  public void profileMethodArgumentValue(final Object value, final int argIndex, final int argCount, final String methodName) {
+  public void profileMethodArgumentValue(final Object value, final int argIndex, final int argCount, final String methodName, String corelString) {
     ArrayList<MethodArgument> values;
     if (valueMap.containsKey(methodName)) {
       values = valueMap.get(methodName);
@@ -182,7 +182,7 @@ public class MethodCallsTracker extends EmptyProfiler {
         Profiler.REAL_OUT.println("Argument: " + argValue.index() + "/" + (argValue.argCount() - 1));
         Profiler.REAL_OUT.println(argValue.value().indent(4));
       }
-      
+
       Profiler.REAL_OUT.println();
     }
   }
