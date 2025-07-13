@@ -1,5 +1,6 @@
 package org.spideruci.analysis.dynamic.profilers;
 
+import org.spideruci.analysis.dynamic.Profiler;
 import org.spideruci.analysis.dynamic.api.EmptyProfiler;
 import org.spideruci.analysis.statik.instrumentation.Config;
 import org.spideruci.analysis.trace.EventType;
@@ -11,11 +12,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 
+import com.thoughtworks.xstream.*;
+
 public class MethodCallsTracker extends EmptyProfiler {
 
-  static {
+  public static void init() {
     Config.profiler = new MethodCallsTracker();
+    // Profiler.entryClass = "org/apache/commons/cli";
   }
+
+  public static String entryClass = "org/apache/commons/validator";
 
   LinkedHashMap<String, Integer> lineProfileCounts = new LinkedHashMap<>();;
   HashMap<String, ClassAndMethod> parentMap = new HashMap<>();
@@ -23,6 +29,20 @@ public class MethodCallsTracker extends EmptyProfiler {
   HashMap<String, String> instructionIdToDesc = new HashMap<>();
 
   HashMap<String, Long> callToCaller = new HashMap<>();
+  HashMap<String, Long> callToCaller_allup = new HashMap<>();
+
+  HashMap<String, ArrayList<String>> valueMap = new HashMap<>();
+
+  @Override
+  public boolean shouldInstrument(String className) {
+    boolean shouldInstrument = className.startsWith(MethodCallsTracker.entryClass);
+
+    if (shouldInstrument) {
+      System.out.println(className + " " + shouldInstrument);
+    }
+    
+    return shouldInstrument;
+  }
 
   @Override
   public String getLogConfig() {
@@ -55,6 +75,23 @@ public class MethodCallsTracker extends EmptyProfiler {
   }
 
   @Override
+  public void profileMethodArgumentValue(final Object value, final int argIndex, final int argCount, final String methodName) {
+    ArrayList<String> values;
+    if (valueMap.containsKey(methodName)) {
+      values = valueMap.get(methodName);
+    } else {
+      values = new ArrayList<>();
+      valueMap.put(methodName, values);
+    }
+
+    XStream stream = new XStream();
+    String stringValue = stream.toXML(value);
+
+    values.add(stringValue);
+    // Profiler.REAL_OUT.println(stream.toXML(value)); 
+  }
+
+  @Override
   public void willInstrumentCode(final TraceEvent e) {
     if (e.getType() == EventType.$$$ || e.getType() == EventType.$$method$$) {
       return;
@@ -77,7 +114,16 @@ public class MethodCallsTracker extends EmptyProfiler {
     String operand = e.getInsnOperand1() + "." + e.getInsnOperand2() + e.getInsnOperand3();
     String desc = declaringParent.toString() + " --> " + operand;
 
-    instructionIdToDesc.put(String.valueOf(id), desc);
+    if (operand.contains("<init>") 
+        && operand.startsWith(MethodCallsTracker.entryClass)
+        && (
+          declaringParent.className.startsWith(MethodCallsTracker.entryClass)
+          && !declaringParent.className.toLowerCase().contains("test")
+        )
+        && !declaringParent.methodName.contains("init>")
+        && !e.getInsnOperand1().contains("Exception")) {
+      instructionIdToDesc.put(String.valueOf(id), desc);
+    }
   }
 
   @Override
@@ -86,7 +132,8 @@ public class MethodCallsTracker extends EmptyProfiler {
     String invokeDesc = instructionIdToDesc.get(insnId);
 
     if (invokeDesc == null) {
-      invokeDesc = "null";
+      // invokeDesc = "null";
+      return;
     }
 
     if (callToCaller.containsKey(invokeDesc)) {
@@ -100,10 +147,41 @@ public class MethodCallsTracker extends EmptyProfiler {
   @Override
   public void endProfiling(String desc) {
     for (String k : callToCaller.keySet()) {
-      System.out.println(k + " ... " + callToCaller.get(k));
+      // System.out.println(k + " ... " + callToCaller.get(k));
+
+      if (callToCaller_allup.containsKey(k)) {
+        long count = callToCaller_allup.get(k);
+        callToCaller_allup.put(k, count + callToCaller.get(k));
+      } else {
+        callToCaller_allup.put(k, callToCaller.get(k));
+      }
+
     }
 
     callToCaller.clear();
+  }
+
+  @Override
+  public void emitLogs() {
+    Profiler.REAL_OUT.println("END!!!");
+
+    for (String k : callToCaller_allup.keySet()) {
+      Profiler.REAL_OUT.println(k);
+    }
+
+    Profiler.REAL_OUT.println("-=-=-=-=-=-=-=-=-=-=-=-");
+
+    for (String methodName : valueMap.keySet()) {
+      ArrayList<String> values = valueMap.get(methodName);
+      if (values == null || values.isEmpty()) {
+        continue;
+      }
+
+      Profiler.REAL_OUT.println(methodName);
+      for (String string : values) {
+        Profiler.REAL_OUT.println(string);
+      }
+    }
   }
 
 
