@@ -31,7 +31,7 @@ public class MethodCallsTracker extends EmptyProfiler {
   HashMap<String, Long> callToCaller = new HashMap<>();
   HashMap<String, Long> callToCaller_allup = new HashMap<>();
 
-  HashMap<String, ArrayList<String>> valueMap = new HashMap<>();
+  HashMap<String, ArrayList<MethodArgument>> valueMap = new HashMap<>();
 
   @Override
   public boolean shouldInstrument(String className) {
@@ -76,7 +76,7 @@ public class MethodCallsTracker extends EmptyProfiler {
 
   @Override
   public void profileMethodArgumentValue(final Object value, final int argIndex, final int argCount, final String methodName) {
-    ArrayList<String> values;
+    ArrayList<MethodArgument> values;
     if (valueMap.containsKey(methodName)) {
       values = valueMap.get(methodName);
     } else {
@@ -86,8 +86,8 @@ public class MethodCallsTracker extends EmptyProfiler {
 
     XStream stream = new XStream();
     String stringValue = stream.toXML(value);
-
-    values.add(stringValue);
+    var arg = new MethodArgument(stringValue, argIndex, methodName, argCount);
+    values.add(arg);
     // Profiler.REAL_OUT.println(stream.toXML(value)); 
   }
 
@@ -172,17 +172,20 @@ public class MethodCallsTracker extends EmptyProfiler {
     Profiler.REAL_OUT.println("-=-=-=-=-=-=-=-=-=-=-=-");
 
     for (String methodName : valueMap.keySet()) {
-      ArrayList<String> values = valueMap.get(methodName);
+      ArrayList<MethodArgument> values = valueMap.get(methodName);
       if (values == null || values.isEmpty()) {
         continue;
       }
 
-      Profiler.REAL_OUT.println(methodName);
-      for (String string : values) {
-        Profiler.REAL_OUT.println(string);
+      Profiler.REAL_OUT.println("Method: " + methodName);
+      for (MethodArgument argValue : values) {
+        Profiler.REAL_OUT.println("Argument: " + argValue.index() + "/" + (argValue.argCount() - 1));
+        Profiler.REAL_OUT.println(argValue.value().indent(4));
       }
+      
+      Profiler.REAL_OUT.println();
     }
   }
-
-
 }
+
+record MethodArgument(String value, int index, String methodName, int argCount) {}
