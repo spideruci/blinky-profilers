@@ -86,7 +86,7 @@ public class MethodCallsTracker extends EmptyProfiler {
 
     XStream stream = new XStream();
     String stringValue = stream.toXML(value);
-    var arg = new MethodArgument(stringValue, argIndex, methodName, argCount);
+    var arg = new MethodArgument(stringValue, argIndex, corelString, methodName, argCount);
     values.add(arg);
     // Profiler.REAL_OUT.println(stream.toXML(value)); 
   }
@@ -179,7 +179,7 @@ public class MethodCallsTracker extends EmptyProfiler {
 
       Profiler.REAL_OUT.println("Method: " + methodName);
       for (MethodArgument argValue : values) {
-        Profiler.REAL_OUT.println("Argument: " + argValue.index() + "/" + (argValue.argCount() - 1));
+        Profiler.REAL_OUT.println("Argument (" + argValue.corelId() + ") : "+ argValue.index() + "/" + (argValue.argCount() - 1));
         Profiler.REAL_OUT.println(argValue.value().indent(4));
       }
 
@@ -188,4 +188,4 @@ public class MethodCallsTracker extends EmptyProfiler {
   }
 }
 
-record MethodArgument(String value, int index, String methodName, int argCount) {}
+record MethodArgument(String value, int index, String corelId, String methodName, int argCount) {}
