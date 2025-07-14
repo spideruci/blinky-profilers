@@ -31,7 +31,7 @@ public class MethodCallsTracker extends EmptyProfiler {
   HashMap<String, Long> callToCaller = new HashMap<>();
   HashMap<String, Long> callToCaller_allup = new HashMap<>();
 
-  HashMap<String, ArrayList<MethodArgument>> valueMap = new HashMap<>();
+  HashMap<String, HashMap<String, ArrayList<MethodArgument>>> valueMap = new HashMap<>();
 
   @Override
   public boolean shouldInstrument(String className) {
@@ -76,12 +76,24 @@ public class MethodCallsTracker extends EmptyProfiler {
 
   @Override
   public void profileMethodArgumentValue(final Object value, final int argIndex, final int argCount, final String methodName, String corelString) {
+    if (methodName.contains("Test.")) {
+      // poor-person's check for Test Case classes
+      return;
+    }
+
+    if (!valueMap.containsKey(methodName)) {
+      valueMap.put(methodName, new HashMap<>());
+    }
+
+    HashMap<String, ArrayList<MethodArgument>> methodArgumentSets = valueMap.get(methodName);
+    if (methodArgumentSets == null) { return; }
+
     ArrayList<MethodArgument> values;
-    if (valueMap.containsKey(methodName)) {
-      values = valueMap.get(methodName);
+    if (methodArgumentSets.containsKey(corelString)) {
+      values = methodArgumentSets.get(corelString);
     } else {
       values = new ArrayList<>();
-      valueMap.put(methodName, values);
+      methodArgumentSets.put(corelString, values);
     }
 
     XStream stream = new XStream();
@@ -172,18 +184,22 @@ public class MethodCallsTracker extends EmptyProfiler {
     Profiler.REAL_OUT.println("-=-=-=-=-=-=-=-=-=-=-=-");
 
     for (String methodName : valueMap.keySet()) {
-      ArrayList<MethodArgument> values = valueMap.get(methodName);
-      if (values == null || values.isEmpty()) {
-        continue;
-      }
+      
+      HashMap<String, ArrayList<MethodArgument>> argumentSets = valueMap.get(methodName);
+      Profiler.REAL_OUT.println("Method: " + methodName + " // " + argumentSets.size());
+      for (String corelIds : argumentSets.keySet()) {
+        ArrayList<MethodArgument> values = argumentSets.get(corelIds);
+        if (values == null || values.isEmpty()) {
+          continue;
+        }
 
-      Profiler.REAL_OUT.println("Method: " + methodName);
-      for (MethodArgument argValue : values) {
-        Profiler.REAL_OUT.println("Argument (" + argValue.corelId() + ") : "+ argValue.index() + "/" + (argValue.argCount() - 1));
-        Profiler.REAL_OUT.println(argValue.value().indent(4));
-      }
+        for (MethodArgument argValue : values) {
+          Profiler.REAL_OUT.println("Argument (" + argValue.corelId() + ") : "+ argValue.index() + "/" + (argValue.argCount() - 1));
+          Profiler.REAL_OUT.println(argValue.value().indent(4));
+        }
 
-      Profiler.REAL_OUT.println();
+        Profiler.REAL_OUT.println();
+      }
     }
   }
 }
