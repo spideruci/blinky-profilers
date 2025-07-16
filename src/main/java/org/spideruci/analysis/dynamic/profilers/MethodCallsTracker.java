@@ -21,7 +21,7 @@ public class MethodCallsTracker extends EmptyProfiler {
     // Profiler.entryClass = "org/apache/commons/cli";
   }
 
-  private static String entryClass = "org/apache/commons/validator";
+  private static String instrumentationScope = "org/apache/commons/validator";
 
   LinkedHashMap<String, Integer> lineProfileCounts = new LinkedHashMap<>();;
   HashMap<String, ClassAndMethod> parentMap = new HashMap<>();
@@ -35,13 +35,18 @@ public class MethodCallsTracker extends EmptyProfiler {
 
   @Override
   public boolean shouldInstrument(String className) {
-    boolean shouldInstrument = className.startsWith(MethodCallsTracker.entryClass);
+    boolean shouldInstrument = className.startsWith(MethodCallsTracker.instrumentationScope);
 
     if (shouldInstrument) {
       System.out.println(className + " " + shouldInstrument);
     }
     
     return shouldInstrument;
+  }
+
+  @Override
+  public void setInstrumentationScope(String scope) {
+    MethodCallsTracker.instrumentationScope = scope;
   }
 
   @Override
@@ -127,9 +132,9 @@ public class MethodCallsTracker extends EmptyProfiler {
     String desc = declaringParent.toString() + " --> " + operand;
 
     if (operand.contains("<init>") 
-        && operand.startsWith(MethodCallsTracker.entryClass)
+        && operand.startsWith(MethodCallsTracker.instrumentationScope)
         && (
-          declaringParent.className.startsWith(MethodCallsTracker.entryClass)
+          declaringParent.className.startsWith(MethodCallsTracker.instrumentationScope)
           && !declaringParent.className.toLowerCase().contains("test")
         )
         && !declaringParent.methodName.contains("init>")
