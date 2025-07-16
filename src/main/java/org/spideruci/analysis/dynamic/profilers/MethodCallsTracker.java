@@ -21,7 +21,7 @@ public class MethodCallsTracker extends EmptyProfiler {
     // Profiler.entryClass = "org/apache/commons/cli";
   }
 
-  public static String entryClass = "org/apache/commons/validator";
+  private static String entryClass = "org/apache/commons/validator";
 
   LinkedHashMap<String, Integer> lineProfileCounts = new LinkedHashMap<>();;
   HashMap<String, ClassAndMethod> parentMap = new HashMap<>();
