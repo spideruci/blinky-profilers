@@ -174,7 +174,7 @@ public class MethodCallsTracker extends EmptyProfiler {
   }
 
   @Override
-  public void emitLogs() {
+  public void emitLogs(final String traceName) {
     Profiler.REAL_OUT.println("END!!!");
 
     for (String k : callToCaller_allup.keySet()) {
