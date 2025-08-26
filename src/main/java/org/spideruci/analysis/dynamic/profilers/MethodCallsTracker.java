@@ -8,6 +8,7 @@ import org.spideruci.analysis.trace.InvokeInsnExecEvent;
 import org.spideruci.analysis.trace.MethodDecl;
 import org.spideruci.analysis.trace.TraceEvent;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -80,7 +81,7 @@ public class MethodCallsTracker extends EmptyProfiler {
   }
 
   @Override
-  public void profileMethodArgumentValue(final Object value, final int argIndex, final int argCount, final String methodName, String corelString) {
+  public void profileMethodArgumentValue(final Object value, final int argIndex, final int argCount, final String methodName, final boolean isStatic, String corelString) {
     if (methodName.contains("Test.")) {
       // poor-person's check for Test Case classes
       return;
@@ -103,7 +104,7 @@ public class MethodCallsTracker extends EmptyProfiler {
 
     XStream stream = new XStream();
     String stringValue = stream.toXML(value);
-    var arg = new MethodArgument(stringValue, argIndex, corelString, methodName, argCount);
+    var arg = new MethodArgument(stringValue, argIndex, corelString, methodName, isStatic, argCount);
     values.add(arg);
     // Profiler.REAL_OUT.println(stream.toXML(value)); 
   }
@@ -179,7 +180,7 @@ public class MethodCallsTracker extends EmptyProfiler {
   }
 
   @Override
-  public void emitLogs(final String traceName) {
+  public void emitLogs(final String traceName, final String logPath) {
     Profiler.REAL_OUT.println("END!!!");
 
     for (String k : callToCaller_allup.keySet()) {
@@ -188,8 +189,9 @@ public class MethodCallsTracker extends EmptyProfiler {
 
     Profiler.REAL_OUT.println("-=-=-=-=-=-=-=-=-=-=-=-");
 
+    Path logDirPath = Path.of(logPath).getParent();
+
     for (String methodName : valueMap.keySet()) {
-      
       HashMap<String, ArrayList<MethodArgument>> argumentSets = valueMap.get(methodName);
       Profiler.REAL_OUT.println("Method: " + methodName + " // " + argumentSets.size());
       for (String corelIds : argumentSets.keySet()) {
@@ -211,4 +213,4 @@ public class MethodCallsTracker extends EmptyProfiler {
   }
 }
 
-record MethodArgument(String value, int index, String corelId, String methodName, int argCount) {}
+record MethodArgument(String value, int index, String corelId, String methodName, boolean methodIsStatic, int argCount) {}
