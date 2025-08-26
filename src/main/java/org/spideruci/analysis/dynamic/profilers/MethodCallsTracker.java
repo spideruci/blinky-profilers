@@ -206,6 +206,8 @@ public class MethodCallsTracker extends EmptyProfiler {
         Profiler.REAL_OUT.println();
       }
     }
+
+    valueMap.clear();
   }
 }
 
