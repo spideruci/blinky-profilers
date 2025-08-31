@@ -8,6 +8,10 @@ import org.spideruci.analysis.trace.InvokeInsnExecEvent;
 import org.spideruci.analysis.trace.MethodDecl;
 import org.spideruci.analysis.trace.TraceEvent;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -182,6 +186,7 @@ public class MethodCallsTracker extends EmptyProfiler {
   @Override
   public void emitLogs(final String traceName, final String logPath) {
     Profiler.REAL_OUT.println("END!!!");
+    System.out.println("END!!!");
 
     for (String k : callToCaller_allup.keySet()) {
       Profiler.REAL_OUT.println(k);
@@ -189,27 +194,65 @@ public class MethodCallsTracker extends EmptyProfiler {
 
     Profiler.REAL_OUT.println("-=-=-=-=-=-=-=-=-=-=-=-");
 
-    Path logDirPath = Path.of(logPath).getParent();
+    Path argLogDirPath = createArgLogDirectory(logPath);
+    System.out.println(argLogDirPath);
+
+    Profiler.REAL_OUT.println(argLogDirPath != null ? argLogDirPath.toFile().getAbsolutePath() : "null");
 
     for (String methodName : valueMap.keySet()) {
       HashMap<String, ArrayList<MethodArgument>> argumentSets = valueMap.get(methodName);
       Profiler.REAL_OUT.println("Method: " + methodName + " // " + argumentSets.size());
       for (String corelIds : argumentSets.keySet()) {
-        ArrayList<MethodArgument> values = argumentSets.get(corelIds);
-        if (values == null || values.isEmpty()) {
-          continue;
-        }
+        try {
+          Path argLogPath = argLogDirPath.resolve(corelIds + ".log");
+          PrintStream outPrintStream = new PrintStream(argLogPath.toFile());
 
-        for (MethodArgument argValue : values) {
-          Profiler.REAL_OUT.println("Argument (" + argValue.corelId() + ") : "+ argValue.index() + "/" + (argValue.argCount() - 1));
-          Profiler.REAL_OUT.println(argValue.value().indent(4));
-        }
+          ArrayList<MethodArgument> values = argumentSets.get(corelIds);
+          if (values == null) {
+            outPrintStream.println("arg values list is null");
+            continue;
+          }
 
-        Profiler.REAL_OUT.println();
+          if (values.isEmpty()) {
+            outPrintStream.println("arg values list is empty");
+            continue;
+          }
+
+          var firstArgValue = values.get(0);
+
+          outPrintStream.println(firstArgValue.methodName());
+          outPrintStream.println("isStatic:" + (firstArgValue.methodIsStatic() ? 0 : 1));
+          outPrintStream.println(firstArgValue.argCount());
+          outPrintStream.println(firstArgValue.corelId());
+
+          for (MethodArgument argValue : values) {
+            outPrintStream.println("Argument (" + argValue.corelId() + ") : "+ argValue.index() + "/" + (argValue.argCount() - 1));
+            outPrintStream.println(argValue.value());
+          }
+
+          outPrintStream.flush();
+          outPrintStream.close();
+        } catch (FileNotFoundException | NullPointerException e) {
+          e.printStackTrace();
+        }
       }
     }
 
     valueMap.clear();
+  }
+
+  private Path createArgLogDirectory(final String logPath) {
+    String logDirPathString = logPath.substring(0, logPath.length() - ".trc".length());
+    Path logDirPath = Path.of(logDirPathString);
+    System.out.println("[debug]" + logPath);
+    System.out.println("[debug]" + logDirPath);
+
+    try {
+      return Files.createDirectories(logDirPath);
+    } catch (IOException e) {
+      Profiler.REAL_OUT.println("[emitLogs failure]: " + e.getMessage());
+      return null;
+    }
   }
 }
 
